@@ -3,31 +3,42 @@ import { motion } from 'framer-motion';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 
+// Import all your logos from src/assets/webstacks/
+import assemblyLogo from '../assets/webstacks/assembly.svg';
+import chatgptLogo from '../assets/webstacks/chatgpt.svg';
+import claudeLogo from '../assets/webstacks/claude.svg';
+import geminiLogo from '../assets/webstacks/gemini.svg';
+import grokLogo from '../assets/webstacks/grok.svg';
+import javaLogo from '../assets/webstacks/java.svg';
+import perplexityLogo from '../assets/webstacks/perplexity.svg';
+import pythonLogo from '../assets/webstacks/python.svg';
+import verilogLogo from '../assets/webstacks/verilog.svg';
+
 interface WebstackLogo {
   name: string;
-  file: string;
+  logo: string;
   description: string;
   learnedAt: string;
 }
 
 const webstacks: WebstackLogo[] = [
-  { name: 'Assembly', file: 'assembly.svg', description: 'Low-level programming for microcontrollers and embedded systems.', learnedAt: 'Learnt in VIT coursework and hardware projects.' },
-  { name: 'ChatGPT', file: 'chatgpt.svg', description: 'AI language model for prompt engineering and automation.', learnedAt: 'Used for prompt engineering and AI-driven content creation.' },
-  { name: 'Claude', file: 'claude.svg', description: 'Anthropic\'s advanced conversational AI for research and automation.', learnedAt: 'Applied in research and AI tool comparisons.' },
-  { name: 'Gemini', file: 'gemini.svg', description: 'Google\'s AI for advanced language and multimodal tasks.', learnedAt: 'Used for AI experiments and portfolio features.' },
-  { name: 'Grok', file: 'grok.svg', description: 'xAI\'s conversational model for technical and creative tasks.', learnedAt: 'Explored for technical writing and creative coding.' },
-  { name: 'Java', file: 'java.svg', description: 'Object-oriented programming language for scalable applications.', learnedAt: 'Learnt in school and college projects.' },
-  { name: 'Perplexity', file: 'perplexity.svg', description: 'AI-powered search and research assistant.', learnedAt: 'Used for research and information retrieval.' },
-  { name: 'Python', file: 'python.svg', description: 'High-level programming language for AI, ML, and automation.', learnedAt: 'Learnt in school, college, and personal projects.' },
-  { name: 'Verilog', file: 'verilog.svg', description: 'Hardware description language for digital design.', learnedAt: 'Applied in digital logic and FPGA coursework.' },
+  { name: 'Assembly', logo: assemblyLogo, description: 'Low-level programming for microcontrollers and embedded systems.', learnedAt: 'Learnt in VIT coursework and hardware projects.' },
+  { name: 'ChatGPT', logo: chatgptLogo, description: 'AI language model for prompt engineering and automation.', learnedAt: 'Used for prompt engineering and AI-driven content creation.' },
+  { name: 'Claude', logo: claudeLogo, description: 'Anthropic\'s advanced conversational AI for research and automation.', learnedAt: 'Applied in research and AI tool comparisons.' },
+  { name: 'Gemini', logo: geminiLogo, description: 'Google\'s AI for advanced language and multimodal tasks.', learnedAt: 'Used for AI experiments and portfolio features.' },
+  { name: 'Grok', logo: grokLogo, description: 'xAI\'s conversational model for technical and creative tasks.', learnedAt: 'Explored for technical writing and creative coding.' },
+  { name: 'Java', logo: javaLogo, description: 'Object-oriented programming language for scalable applications.', learnedAt: 'Learnt in school and college projects.' },
+  { name: 'Perplexity', logo: perplexityLogo, description: 'AI-powered search and research assistant.', learnedAt: 'Used for research and information retrieval.' },
+  { name: 'Python', logo: pythonLogo, description: 'High-level programming language for AI, ML, and automation.', learnedAt: 'Learnt in school, college, and personal projects.' },
+  { name: 'Verilog', logo: verilogLogo, description: 'Hardware description language for digital design.', learnedAt: 'Applied in digital logic and FPGA coursework.' },
 ];
 
 const BALL_RADIUS = 45;
 const CONTAINER_WIDTH = 900;
 const CONTAINER_HEIGHT = 400;
-const GROUND_Y = CONTAINER_HEIGHT - 60; // Ground line position
+const GROUND_Y = CONTAINER_HEIGHT - 60;
 const GRAVITY = 0.5;
-const BOUNCE = 0.7; // Elasticity
+const BOUNCE = 0.7;
 const FRICTION = 0.98;
 
 type BallState = {
@@ -45,7 +56,6 @@ const Webstacks: React.FC = () => {
   const [animationStarted, setAnimationStarted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Start animation on scroll into view
   useEffect(() => {
     const onScroll = () => {
       if (!containerRef.current) return;
@@ -57,7 +67,6 @@ const Webstacks: React.FC = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Initialize balls when animation starts
   useEffect(() => {
     if (!animationStarted) return;
     setBalls(
@@ -71,40 +80,33 @@ const Webstacks: React.FC = () => {
     );
   }, [animationStarted]);
 
-  // Physics simulation
   useEffect(() => {
     if (!animationStarted || balls.length === 0) return;
-    
+
     let frame: number;
     const animate = () => {
       setBalls((prev) => {
         const next = prev.map(ball => ({ ...ball }));
-        
+
         for (let i = 0; i < next.length; i++) {
           const ball = next[i];
-          
-          // Apply gravity
+
+          // Gravity
           ball.vy += GRAVITY;
-          
-          // Apply friction
+          // Friction
           ball.vx *= FRICTION;
-          
           // Update position
           ball.x += ball.vx;
           ball.y += ball.vy;
-          
-          // Ground collision (never go below ground)
+
+          // Ground collision
           if (ball.y + BALL_RADIUS >= GROUND_Y) {
             ball.y = GROUND_Y - BALL_RADIUS;
             ball.vy = -ball.vy * BOUNCE;
-            ball.vx *= 0.9; // Ground friction
-            
-            // Stop tiny bounces
-            if (Math.abs(ball.vy) < 1) {
-              ball.vy = 0;
-            }
+            ball.vx *= 0.9;
+            if (Math.abs(ball.vy) < 1) ball.vy = 0;
           }
-          
+
           // Wall collisions
           if (ball.x - BALL_RADIUS <= 0) {
             ball.x = BALL_RADIUS;
@@ -114,7 +116,7 @@ const Webstacks: React.FC = () => {
             ball.x = CONTAINER_WIDTH - BALL_RADIUS;
             ball.vx = -ball.vx * BOUNCE;
           }
-          
+
           // Ball-to-ball collisions
           for (let j = i + 1; j < next.length; j++) {
             const other = next[j];
@@ -122,41 +124,32 @@ const Webstacks: React.FC = () => {
             const dy = ball.y - other.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             const minDistance = BALL_RADIUS * 2;
-            
+
             if (distance < minDistance) {
-              // Collision detected - separate balls
               const overlap = minDistance - distance;
               const separationX = (dx / distance) * overlap * 0.5;
               const separationY = (dy / distance) * overlap * 0.5;
-              
+
               ball.x += separationX;
               ball.y += separationY;
               other.x -= separationX;
               other.y -= separationY;
-              
-              // Calculate collision response
+
               const normalX = dx / distance;
               const normalY = dy / distance;
-              
-              // Relative velocity
+
               const relativeVelX = ball.vx - other.vx;
               const relativeVelY = ball.vy - other.vy;
-              
-              // Relative velocity in collision normal direction
               const velAlongNormal = relativeVelX * normalX + relativeVelY * normalY;
-              
-              // Don't resolve if velocities are separating
               if (velAlongNormal > 0) continue;
-              
-              // Restitution (bounciness)
+
               const restitution = 0.8;
               let j = -(1 + restitution) * velAlongNormal;
               j /= (1 / ball.mass + 1 / other.mass);
-              
-              // Apply impulse
+
               const impulseX = j * normalX;
               const impulseY = j * normalY;
-              
+
               ball.vx += impulseX / ball.mass;
               ball.vy += impulseY / ball.mass;
               other.vx -= impulseX / other.mass;
@@ -164,13 +157,13 @@ const Webstacks: React.FC = () => {
             }
           }
         }
-        
+
         return next;
       });
-      
+
       frame = requestAnimationFrame(animate);
     };
-    
+
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
   }, [animationStarted, balls.length]);
@@ -205,7 +198,7 @@ const Webstacks: React.FC = () => {
               zIndex: 1,
             }}
           />
-          
+
           {/* Physics balls */}
           {balls.map((ball, i) => (
             <motion.div
@@ -232,13 +225,13 @@ const Webstacks: React.FC = () => {
               transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             >
               <img
-                src={`/src/assets/webstacks/${webstacks[i].file}`}
+                src={webstacks[i].logo}
                 alt={webstacks[i].name}
                 style={{ width: 40, height: 40 }}
               />
             </motion.div>
           ))}
-          
+
           {/* Tooltips */}
           {webstacks.map((stack, i) => (
             <Tooltip
