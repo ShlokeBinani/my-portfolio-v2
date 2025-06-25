@@ -1,0 +1,90 @@
+# Dependency directories
+node_modules
+jspm_packages
+
+# Build output
+dist
+build
+
+# Logs
+logs
+.log
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Diagnostic reports
+report.[0-9].[0-9].[0-9].[0-9].json
+
+# Runtime data
+pids
+.pid
+.seed
+.pid.lock
+
+# Coverage
+coverage
+.lcov
+
+# TypeScript cache
+.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache
+.rts2_cache_cjs
+.rts2_cache_es
+.rts2_cache_umd
+
+# Output of 'npm pack'
+.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.test
+.env.local
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# VSCode
+.vscode
+!.vscodesettings.json
+!.vscodetasks.json
+!.vscodelaunch.json
+!.vscodeextensions.json
+.code-workspace
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+.stackdump
+.cab
+.msi
+.msix
+.msm
+.msp
+.lnk
+
+# Others
+.idea
+.suo
+.ntvs
+.njsproj
+.sln
+.sw
