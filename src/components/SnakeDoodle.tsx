@@ -1,6 +1,6 @@
 // File: src/components/SnakeDoodle.tsx
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, } from 'react';
 
 const SNAKE_LENGTH = 180;
 const SEGMENT_LENGTH = 16;
