@@ -22,7 +22,7 @@ const SkillsSection: React.FC = () => {
     if (!showAll) {
       const interval = setInterval(() => {
         setCurrentSkillIndex(prev => (prev + 1) % skills.length);
-      }, 1500);
+      }, 800);
       return () => clearInterval(interval);
     }
   }, [showAll]);
