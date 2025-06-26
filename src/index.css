@@ -45,6 +45,13 @@ html, body {
   }
 }
 
+@media (max-width: 600px) {
+  .skills-grid {
+    grid-template-columns: 1fr;
+    max-width: 95vw;
+  }
+}
+
 .skill-card, .skill-float-box {
   background: rgba(30, 41, 59, 0.98);
   border: 1.5px solid #6366f1;
@@ -72,10 +79,18 @@ html, body {
 
 .skill-float-box {
   position: absolute;
-  left: 120px; /* Adjust to match SVG hand */
-  top: 50px;   /* Adjust to match SVG hand */
-  pointer-events: none;
+  left: var(--skill-float-left, 120px); /* Adjust to match SVG hand */
+  top: var(--skill-float-top, 50px);    /* Adjust to match SVG hand */
+  /* pointer-events: none; */ /* Removed for accessibility if interaction is needed */
   animation: skillBoxIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Responsive adjustment for skill-float-box position */
+@media (max-width: 900px) {
+  .skill-float-box {
+    --skill-float-left: 40px;
+    --skill-float-top: 30px;
+  }
 }
 @keyframes skillBoxIn {
   0% { opacity: 0; transform: translateY(-30px) scale(0.8);}

@@ -1,179 +1,187 @@
-import React, { useRef, useEffect } from 'react';
+// File: src/components/SnakeDoodle.tsx
 
-const WIDTH = 1920; // Covers all screens
-const HEIGHT = 600; // Height of your hero area
-const SNAKE_LENGTH = 180; // Longer snake
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+
+const SNAKE_LENGTH = 180;
 const SEGMENT_LENGTH = 16;
-const EASING = 0.18;
+const NORMAL_EASE = 0.03;    // Slow wandering speed when idle
+const MOUSE_EASE = 0.65;     // Fast follow speed when mouse moves
 const MAX_ANGLE = Math.PI / 4;
+const IDLE_TIMEOUT = 1200;   // ms before switching back to random wandering
 
-function clamp(val: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, val));
+function clamp(v: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, v));
 }
 
-function getRandomTarget() {
+function getRandomTarget(width: number, height: number) {
   const margin = 80;
   return {
-    x: Math.random() * (WIDTH - margin * 2) + margin,
-    y: Math.random() * (HEIGHT - margin * 2) + margin,
+    x: Math.random() * (width - margin * 2) + margin,
+    y: Math.random() * (height - margin * 2) + margin,
   };
 }
 
 const SnakeDoodle: React.FC = () => {
+  // State for canvas dimensions matching #hero
+  const [size, setSize] = useState({ w: 0, h: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number | null>(null);
-  const mouse = useRef<{ x: number; y: number; inside: boolean }>({ x: 240, y: 300, inside: false });
-  const snake = useRef<{ x: number; y: number }[]>([]);
-  const randomTarget = useRef<{ x: number; y: number }>(getRandomTarget());
-  const paused = useRef(false);
+  const frame = useRef<number>(0);
 
-  // Pause animation when hero is out of view
+  // Snake segments and wandering target
+  const snake = useRef<{ x: number; y: number }[]>([]);
+  const wanderTarget = useRef<{ x: number; y: number }>(getRandomTarget(window.innerWidth, window.innerHeight));
+
+  // Mouse tracking
+  const mouse = useRef({ x: 0, y: 0, active: false, lastMove: 0 });
+  const wanderTimer = useRef(0);
+
+  // Match canvas to hero section size
   useEffect(() => {
-    const onScroll = () => {
-      if (!canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      paused.current = rect.bottom < 80 || rect.top > window.innerHeight - 80;
+    const updateSize = () => {
+      const hero = document.getElementById('hero');
+      if (hero) {
+        const rect = hero.getBoundingClientRect();
+        setSize({ w: Math.round(rect.width), h: Math.round(rect.height) });
+      }
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, []);
 
+  // Listen to mouse moves anywhere on window
   useEffect(() => {
-    // Initialize snake points
-    snake.current = [];
-    for (let i = 0; i < SNAKE_LENGTH; i++) {
-      snake.current.push({ x: 40 - i * SEGMENT_LENGTH, y: HEIGHT / 2 });
-    }
+    const handleMove = (e: MouseEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = clamp((e.clientX - rect.left) * scaleX, 0, canvas.width);
+      const y = clamp((e.clientY - rect.top) * scaleY, 0, canvas.height);
 
-    let wanderTimer = 0;
+      mouse.current = { x, y, active: true, lastMove: Date.now() };
+    };
+    const handleLeave = () => {
+      mouse.current.active = false;
+    };
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseout', handleLeave);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseout', handleLeave);
+    };
+  }, []);
+
+  // Main animation loop
+  useEffect(() => {
+    if (!size.w || !size.h) return;
+
+    // Initialize snake positions
+    snake.current = Array.from({ length: SNAKE_LENGTH }, (_, i) => ({
+      x: 40 - i * SEGMENT_LENGTH,
+      y: size.h / 2
+    }));
+    wanderTarget.current = getRandomTarget(size.w, size.h);
 
     const draw = () => {
-      if (paused.current) {
-        animationRef.current = requestAnimationFrame(draw);
-        return;
-      }
-
       const ctx = canvasRef.current?.getContext('2d');
-      if (!ctx) return;
+      if (ctx) {
+        // Fade previous frame
+        ctx.globalAlpha = 0.16;
+        ctx.fillStyle = '#101017';
+        ctx.fillRect(0, 0, size.w, size.h);
+        ctx.globalAlpha = 1;
 
-      // Fade trail
-      ctx.globalAlpha = 0.16;
-      ctx.fillStyle = "#101017";
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      ctx.globalAlpha = 1;
+        // Determine whether mouse is active
+        const now = Date.now();
+        const isMouseActive = mouse.current.active && (now - mouse.current.lastMove) < IDLE_TIMEOUT;
 
-      // Move head toward mouse or random target
-      let head = snake.current[0];
-      let target;
-      if (mouse.current.inside) {
-        target = mouse.current;
-      } else {
-        wanderTimer++;
-        if (wanderTimer > 120) {
-          randomTarget.current = getRandomTarget();
-          wanderTimer = 0;
+        // Select target and easing
+        const target = isMouseActive
+          ? mouse.current
+          : (() => {
+              wanderTimer.current++;
+              if (wanderTimer.current > 240) {  // slower retarget interval
+                wanderTarget.current = getRandomTarget(size.w, size.h);
+                wanderTimer.current = 0;
+              }
+              return wanderTarget.current;
+            })();
+        const ease = isMouseActive ? MOUSE_EASE : NORMAL_EASE;
+
+        // Move head toward target
+        const head = snake.current[0];
+        head.x += (target.x - head.x) * ease;
+        head.y += (target.y - head.y) * ease;
+
+        // Move each segment toward previous one with angle clamping
+        for (let i = 1; i < SNAKE_LENGTH; i++) {
+          const prev = snake.current[i - 1];
+          const curr = snake.current[i];
+          const dx = prev.x - curr.x;
+          const dy = prev.y - curr.y;
+          let angle = Math.atan2(dy, dx);
+
+          if (i > 1) {
+            const p2 = snake.current[i - 2];
+            const prevAngle = Math.atan2(p2.y - prev.y, p2.x - prev.x);
+            let diff = angle - prevAngle;
+            if (diff > MAX_ANGLE) angle = prevAngle + MAX_ANGLE;
+            if (diff < -MAX_ANGLE) angle = prevAngle - MAX_ANGLE;
+          }
+
+          curr.x = prev.x - Math.cos(angle) * SEGMENT_LENGTH;
+          curr.y = prev.y - Math.sin(angle) * SEGMENT_LENGTH;
         }
-        target = randomTarget.current;
-      }
 
-      head.x += (target.x - head.x) * EASING;
-      head.y += (target.y - head.y) * EASING;
-
-      // Move each segment to follow the previous one, with angle constraint
-      for (let i = 1; i < SNAKE_LENGTH; i++) {
-        let prev = snake.current[i - 1];
-        let curr = snake.current[i];
-        let dx = prev.x - curr.x;
-        let dy = prev.y - curr.y;
-        let angle = Math.atan2(dy, dx);
-
-        // Clamp angle for more "spine" effect
-        if (i > 1) {
-          let prevAngle = Math.atan2(snake.current[i - 2].y - prev.y, snake.current[i - 2].x - prev.x);
-          let diff = angle - prevAngle;
-          if (diff > MAX_ANGLE) angle = prevAngle + MAX_ANGLE;
-          if (diff < -MAX_ANGLE) angle = prevAngle - MAX_ANGLE;
+        // Draw snake with glow and gradient
+        ctx.save();
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        ctx.moveTo(head.x, head.y);
+        for (let i = 1; i < SNAKE_LENGTH; i++) {
+          ctx.lineTo(snake.current[i].x, snake.current[i].y);
         }
-
-        curr.x = prev.x - Math.cos(angle) * SEGMENT_LENGTH;
-        curr.y = prev.y - Math.sin(angle) * SEGMENT_LENGTH;
+        const grad = ctx.createLinearGradient(
+          head.x, head.y,
+          snake.current[SNAKE_LENGTH - 1].x,
+          snake.current[SNAKE_LENGTH - 1].y
+        );
+        grad.addColorStop(0, '#06b6d4');
+        grad.addColorStop(1, '#6366f1');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = isMouseActive ? 11 : 9;
+        ctx.globalAlpha = 0.88;
+        ctx.stroke();
+        ctx.restore();
       }
-
-      // Draw the snake as a glowing line
-      ctx.save();
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-      ctx.shadowColor = "#06b6d4";
-      ctx.shadowBlur = 22;
-      ctx.beginPath();
-      ctx.moveTo(snake.current[0].x, snake.current[0].y);
-      for (let i = 1; i < SNAKE_LENGTH; i++) {
-        ctx.lineTo(snake.current[i].x, snake.current[i].y);
-      }
-      // Gradient
-      const grad = ctx.createLinearGradient(
-        snake.current[0].x, snake.current[0].y,
-        snake.current[SNAKE_LENGTH - 1].x, snake.current[SNAKE_LENGTH - 1].y
-      );
-      grad.addColorStop(0, "#06b6d4");
-      grad.addColorStop(1, "#6366f1");
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 9;
-      ctx.globalAlpha = 0.88;
-      ctx.stroke();
-      ctx.restore();
-
-      animationRef.current = requestAnimationFrame(draw);
+      frame.current = requestAnimationFrame(draw);
     };
 
-    animationRef.current = requestAnimationFrame(draw);
+    frame.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(frame.current!);
+  }, [size]);
 
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, []);
-
-  // Mouse events
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      mouse.current.x = clamp(e.clientX - rect.left, 0, WIDTH);
-      mouse.current.y = clamp(e.clientY - rect.top, 0, HEIGHT);
-    };
-    const handleMouseEnter = () => { mouse.current.inside = true; };
-    const handleMouseLeave = () => { mouse.current.inside = false; };
-
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.addEventListener('mousemove', handleMouseMove);
-      canvas.addEventListener('mouseenter', handleMouseEnter);
-      canvas.addEventListener('mouseleave', handleMouseLeave);
-    }
-    return () => {
-      if (canvas) {
-        canvas.removeEventListener('mousemove', handleMouseMove);
-        canvas.removeEventListener('mouseenter', handleMouseEnter);
-        canvas.removeEventListener('mouseleave', handleMouseLeave);
-      }
-    };
-  }, []);
+  // Render only when size is known
+  if (!size.w || !size.h) return null;
 
   return (
     <canvas
       ref={canvasRef}
-      width={WIDTH}
-      height={HEIGHT}
+      width={size.w}
+      height={size.h}
       style={{
         position: 'absolute',
         inset: 0,
-        width: '100vw',
-        height: '100vh',
-        display: 'block',
+        width: `${size.w}px`,
+        height: `${size.h}px`,
         background: '#101017',
+        pointerEvents: 'none',
         zIndex: 0,
-        pointerEvents: 'auto'
       }}
     />
   );
