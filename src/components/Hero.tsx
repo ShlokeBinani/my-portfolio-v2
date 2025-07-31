@@ -1,7 +1,7 @@
 // File: src/components/Hero.tsx
 
 import React from 'react';
-import SnakeDoodle from './SnakeDoodle';
+import RobotAnimation from './RobotAnimation';
 import GeminiEffect from './GeminiEffect';
 import { motion } from 'framer-motion';
 
@@ -17,9 +17,9 @@ const Hero: React.FC = () => {
         background: '#101017',
       }}
     >
-      {/* Full-screen background doodle */}
+      {/* Full-screen background robot animation */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        <SnakeDoodle />
+        <RobotAnimation />
       </div>
 
       {/* Hero content */}
