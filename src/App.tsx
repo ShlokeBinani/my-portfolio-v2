@@ -3,8 +3,7 @@ import ScrollTechProgress from './components/ScrollTechProgress';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
-import SkillsSection from './components/SkillsSection';
-import Webstacks from './components/Webstacks';
+import SkillsAndTech from './components/SkillsAndTech';
 import Projects from './components/Projects';
 import Achievements from './components/Achievements';
 import LanguagesInterests from './components/LanguagesInterests';
@@ -17,8 +16,7 @@ const App: React.FC = () => (
     <main>
       <Hero />
       <About />
-      <SkillsSection />
-      <Webstacks />
+      <SkillsAndTech />
       <Projects />
       <Achievements />
       <LanguagesInterests />
